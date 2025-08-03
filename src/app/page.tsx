@@ -36,8 +36,30 @@ export default function Home() {
       }
       
       const token = tokenData[0];
+      const tokenAddress = token.address;
       
-      setResult(`Found: ${token.name} (${token.symbol}) - Address: ${token.address}`);
+      // Get spot price using our API route
+      const priceResponse = await fetch('/api/spot-price', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ address: tokenAddress })
+      });
+      
+      if (!priceResponse.ok) {
+        const errorData = await priceResponse.json();
+        throw new Error(errorData.error || 'Unable to fetch price');
+      }
+      
+      const priceData = await priceResponse.json();
+      const price = priceData[tokenAddress];
+      
+      if (price) {
+        setResult(`${token.name} (${token.symbol}): $${parseFloat(price).toFixed(2)}`);
+      } else {
+        setResult(`${token.name} (${token.symbol}): Price not available`);
+      }
       
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Connection error. Check your internet.');
